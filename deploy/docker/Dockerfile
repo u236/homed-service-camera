@@ -1,0 +1,10 @@
+FROM    127.0.0.1:5000/homed-service:latest
+ARG     TARGETARCH
+RUN     rm /var/lib/dpkg/info/libc-bin.*
+RUN     apt update
+RUN     apt install -y curl
+RUN     mkdir /etc/homed
+RUN     ln -s /data/homed-camera.conf /etc/homed/homed-camera.conf
+RUN     ln -s /data/homed.log /var/log/homed.log
+COPY    homed-camera-$TARGETARCH /usr/bin/homed-camera
+CMD     ["/usr/bin/homed-camera"]

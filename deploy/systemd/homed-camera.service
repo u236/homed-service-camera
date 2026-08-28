@@ -1,0 +1,11 @@
+[Unit]
+Description=HOMEd Camera Service
+
+[Service]
+ExecStart=/usr/bin/homed-camera
+Environment=LD_LIBRARY_PATH=/usr/lib
+KillSignal=SIGTERM
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

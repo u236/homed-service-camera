@@ -1,0 +1,7 @@
+variables:
+  NAME: homed-camera
+  PACKAGE_EXTRA: mkdir -p deploy/data/opt/homed-camera
+
+include:
+- project: 'homed/services/homed-common'
+  file: '.gitlab-ci/pipeline.yml'

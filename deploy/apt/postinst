@@ -1,0 +1,7 @@
+#!/bin/bash
+
+systemctl daemon-reload
+systemctl enable homed-camera.service
+systemctl start homed-camera.service
+
+exit 0

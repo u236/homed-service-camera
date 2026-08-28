@@ -1,0 +1,6 @@
+#!/bin/bash
+
+systemctl stop homed-camera.service
+systemctl disable homed-camera.service
+
+exit 0

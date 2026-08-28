@@ -1,0 +1,6 @@
+#!/bin/sh
+
+/etc/init.d/homed-camera enable
+/etc/init.d/homed-camera start
+
+exit 0

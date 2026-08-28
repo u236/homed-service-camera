@@ -1,0 +1,4 @@
+name = homed-camera
+description = HOMEd Camera Service
+maintainer = u236 <mail@u236.org>
+depends = curl homed-qt

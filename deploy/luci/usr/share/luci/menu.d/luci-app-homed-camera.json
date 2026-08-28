@@ -1,0 +1,14 @@
+{
+  "admin/homed":
+  {
+    "title": "HOMEd",
+    "action": {"type": "firstchild"},
+    "depends": {"acl": ["luci-app-homed-camera"]},
+    "order": 60
+  },
+  "admin/homed/camera":
+  {
+    "title": "Camera Service Configuration",
+    "action": {"type": "view", "path": "homed/camera"}
+  }
+}

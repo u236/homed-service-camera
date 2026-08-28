@@ -1,0 +1,8 @@
+Package: homed-camera
+Version:
+Architecture:
+Maintainer: u236
+Depends: curl, homed-qt
+Section: misc
+Priority: standard
+Description: HOMEd Camera Service
