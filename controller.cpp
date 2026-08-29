@@ -71,6 +71,7 @@ void Controller::updateStream(const QString &name, const QString &source)
 
 void Controller::syncStreams(const QJsonObject &json)
 {
+    QRegExp expression(QString("^%1_[0-9a-f]{10}(_sub)?$").arg(QRegExp::escape(m_prefix)));
     QMap <QString, QString> items;
 
     for (int i = 0; i < m_devices->count(); i++)
@@ -90,7 +91,7 @@ void Controller::syncStreams(const QJsonObject &json)
 
     for (auto it = json.begin(); it != json.end(); it++)
     {
-        if (!it.key().startsWith(m_prefix) || items.contains(it.key()))
+        if (!expression.exactMatch(it.key()) || items.contains(it.key()))
             continue;
 
         updateStream(it.key(), QString());
