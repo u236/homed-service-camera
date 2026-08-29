@@ -217,8 +217,11 @@ void Controller::requestStreams(void)
 void Controller::finished(int exitCode, QProcess::ExitStatus)
 {
     QProcess *process = reinterpret_cast <QProcess*> (sender());
+    QByteArray response = process->readAllStandardOutput();
+    QJsonObject json = QJsonDocument::fromJson(response).object();
     QString id = process->property("id").toString();
 
+    logDebug(m_debug) << "API response:" << response.constData();
     process->deleteLater();
 
     if (exitCode)
@@ -226,7 +229,6 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
 
     if (!id.isEmpty())
     {
-        QJsonObject json = QJsonDocument::fromJson(process->readAllStandardOutput()).object();
         mqttPublish(mqttTopic(serviceTopic()), json.value("type").toString() == "answer" ? QJsonObject {{"id", id}, {"sdp", json.value("sdp")}} : QJsonObject {{"id", id}, {"error", "request failed"}});
         return;
     }
@@ -240,6 +242,6 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
         return;
     }
 
-    syncStreams(QJsonDocument::fromJson(process->readAllStandardOutput()).object());
+    syncStreams(json);
     m_timer->stop();
 }
