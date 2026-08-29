@@ -58,7 +58,7 @@ Device DeviceList::parse(const QJsonObject &json)
     QString id = mqttSafe(json.value("id").toString()), name = mqttSafe(json.value("name").toString()), mainStream = json.value("mainStream").toString().trimmed(), subStream = json.value("subStream").toString().trimmed();
     Device device;
 
-    if (!name.isEmpty() && mainStream.contains("://") && (subStream.isEmpty() || subStream.contains("://")))
+    if (!name.isEmpty() && !mainStream.isEmpty())
         device = Device(new DeviceObject(id.isEmpty() ? randomData(5).toHex() : id, name, mainStream, subStream));
 
     return device;

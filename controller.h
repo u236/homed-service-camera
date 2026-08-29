@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#define SERVICE_VERSION             "1.0.0"
+#define SERVICE_VERSION             "1.0.1"
 #define REQUEST_TIMEOUT             15
 #define RETRY_INTERVAL              10000
 
@@ -28,6 +28,7 @@ public:
     {
         nameDuplicate,
         incompleteData,
+        missingStream,
         added,
         updated,
         removed
@@ -50,7 +51,7 @@ private:
     QString streamName(const Device &device, bool mainStream);
 
     void sendRequest(const QString &method, const QString &path, const QString &id = QString(), const QByteArray &data = QByteArray());
-    void updateStream(const QString &name, const QString &source);
+    void updateStream(const QString &name, const QString &stream);
     void syncStreams(const QJsonObject &json);
 
     void publishEvent(const QString &name, Event event);

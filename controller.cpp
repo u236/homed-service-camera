@@ -15,7 +15,11 @@ Controller::Controller(const QString &configFile) : HOMEd(SERVICE_VERSION, confi
 
 QString Controller::streamName(const Device &device, bool mainStream)
 {
+    QString stream = mainStream ? device->mainStream() : device->subStream();
     QList <QString> list = {m_prefix, device->id()};
+
+    if (!stream.isEmpty() && !stream.contains("://"))
+        return stream;
 
     if (!mainStream)
         list.append("sub");
@@ -55,12 +59,12 @@ void Controller::sendRequest(const QString &method, const QString &path, const Q
     process->closeWriteChannel();
 }
 
-void Controller::updateStream(const QString &name, const QString &source)
+void Controller::updateStream(const QString &name, const QString &stream)
 {
-    if (!source.isEmpty())
+    if (!stream.isEmpty())
     {
         logInfo << "Stream" << name << "updated";
-        sendRequest("PUT", QString("streams?name=%1&src=%2").arg(name, QString(QUrl::toPercentEncoding(source))));
+        sendRequest("PUT", QString("streams?name=%1&src=%2").arg(name, QString(QUrl::toPercentEncoding(stream))));
     }
     else
     {
@@ -72,16 +76,37 @@ void Controller::updateStream(const QString &name, const QString &source)
 void Controller::syncStreams(const QJsonObject &json)
 {
     QRegExp expression(QString("^%1_[0-9a-f]{10}(_sub)?$").arg(QRegExp::escape(m_prefix)));
-    QMap <QString, QString> items;
+    QMap <QString, QString> map;
+    QList <QString> list;
 
     for (int i = 0; i < m_devices->count(); i++)
     {
         const Device &device = m_devices->at(i);
-        items.insert(streamName(device, true), device->mainStream());
-        items.insert(streamName(device, false), device->subStream());
+
+        for (int j = 1; j >= 0; j--)
+        {
+            QString stream = j ? device->mainStream() : device->subStream();
+
+            if (stream.isEmpty() || stream.contains("://"))
+            {
+                map.insert(streamName(device, j), stream);
+                continue;
+            }
+
+            if (!json.contains(stream))
+            {
+                logWarning << device << "stream" << stream << "not found";
+                publishEvent(device->name(), Event::missingStream);
+            }
+
+            if (list.contains(stream))
+                continue;
+
+            list.append(stream);
+        }
     }
 
-    for (auto it = items.begin(); it != items.end(); it++)
+    for (auto it = map.begin(); it != map.end(); it++)
     {
         if (json.value(it.key()).toObject().value("producers").toArray().first().toObject().value("url").toString() == it.value())
             continue;
@@ -91,7 +116,7 @@ void Controller::syncStreams(const QJsonObject &json)
 
     for (auto it = json.begin(); it != json.end(); it++)
     {
-        if (!expression.exactMatch(it.key()) || items.contains(it.key()))
+        if (!expression.exactMatch(it.key()) || map.contains(it.key()) || list.contains(it.key()))
             continue;
 
         updateStream(it.key(), QString());
@@ -203,7 +228,7 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
             Device device = m_devices->byName(json.value("device").toString());
 
             if (!device.isNull())
-                sendRequest("POST", QString("webrtc?src=%1").arg(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())), json.value("id").toString(), QJsonDocument({{"sdp", json.value("sdp")}, {"type", "offer"}}).toJson(QJsonDocument::Compact));
+                sendRequest("POST", QString("webrtc?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))), json.value("id").toString(), QJsonDocument({{"sdp", json.value("sdp")}, {"type", "offer"}}).toJson(QJsonDocument::Compact));
 
             break;
         }
