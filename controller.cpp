@@ -4,6 +4,7 @@
 Controller::Controller(const QString &configFile) : HOMEd(SERVICE_VERSION, configFile), m_timer(new QTimer(this)), m_devices(new DeviceList(getConfig(), this)), m_commands(QMetaEnum::fromType <Command> ()), m_events(QMetaEnum::fromType <Event> ())
 {
     m_url = getConfig()->value("rtc/url", "http://localhost:1984").toString();
+    m_prefix = getConfig()->value("rtc/prefix", "homed").toString();
     m_debug = getConfig()->value("rtc/debug", false).toBool();
 
     connect(m_timer, &QTimer::timeout, this, &Controller::requestStreams);
@@ -14,7 +15,7 @@ Controller::Controller(const QString &configFile) : HOMEd(SERVICE_VERSION, confi
 
 QString Controller::streamName(const Device &device, bool mainStream)
 {
-    QList <QString> list = {STREAM_PREFIX, device->id()};
+    QList <QString> list = {m_prefix, device->id()};
 
     if (!mainStream)
         list.append("sub");
@@ -89,7 +90,7 @@ void Controller::syncStreams(const QJsonObject &json)
 
     for (auto it = json.begin(); it != json.end(); it++)
     {
-        if (!it.key().startsWith(STREAM_PREFIX) || items.contains(it.key()))
+        if (!it.key().startsWith(m_prefix) || items.contains(it.key()))
             continue;
 
         updateStream(it.key(), QString());

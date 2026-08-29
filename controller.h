@@ -2,8 +2,6 @@
 #define CONTROLLER_H
 
 #define SERVICE_VERSION             "1.0.0"
-#define STREAM_PREFIX               "homed_camera"
-
 #define REQUEST_TIMEOUT             15
 #define RETRY_INTERVAL              10000
 
@@ -46,7 +44,7 @@ private:
     DeviceList *m_devices;
 
     QMetaEnum m_commands, m_events;
-    QString m_url;
+    QString m_url, m_prefix;
     bool m_debug;
 
     QString streamName(const Device &device, bool mainStream);
