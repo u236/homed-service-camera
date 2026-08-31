@@ -47,6 +47,7 @@ void Controller::sendRequest(const QString &method, const QString &path, const Q
 
     connect(process, static_cast <void (QProcess::*)(int, QProcess::ExitStatus)> (&QProcess::finished), this, &Controller::finished);
     process->setProperty("method", method);
+    process->setProperty("path", path);
     process->setProperty("id", id);
 
     logDebug(m_debug) << "API request:" << command.toUtf8().constData();
@@ -223,6 +224,16 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
             break;
         }
 
+        case Command::getFrame:
+        {
+            Device device = m_devices->byName(json.value("device").toString());
+
+            if (!device.isNull())
+                sendRequest("GET", QString("frame.jpeg?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))), json.value("id").toString());
+
+            break;
+        }
+
         case Command::getStream:
         {
             Device device = m_devices->byName(json.value("device").toString());
@@ -246,12 +257,19 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
     QByteArray response = process->readAllStandardOutput();
     QJsonObject json = QJsonDocument::fromJson(response).object();
     QString id = process->property("id").toString();
+    bool frame = process->property("path").toString().startsWith("frame.jpeg");
 
-    logDebug(m_debug) << "API response:" << response.constData();
+    logDebug(m_debug) << "API response:" << (frame ? QString("frame data (%1 bytes)").arg(response.length()).toUtf8() : response).constData();
     process->deleteLater();
 
     if (exitCode)
         logWarning << "API request failed, curl exit code:" << exitCode;
+
+    if (frame)
+    {
+        mqttPublish(mqttTopic(serviceTopic()), !exitCode ? QJsonObject {{"id", id}, {"data", QString(response.toBase64())}} : QJsonObject {{"id", id}, {"error", "request failed"}});
+        return;
+    }
 
     if (!id.isEmpty())
     {
