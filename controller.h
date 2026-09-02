@@ -2,7 +2,7 @@
 #define CONTROLLER_H
 
 #define SERVICE_VERSION             "1.0.2"
-#define REQUEST_TIMEOUT             15
+#define REQUEST_TIMEOUT             10
 #define RETRY_INTERVAL              10000
 
 #include <QMetaEnum>

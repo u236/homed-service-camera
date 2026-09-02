@@ -16,17 +16,18 @@ class DeviceObject
 
 public:
 
-    DeviceObject(const QString &id, const QString &name, const QString &mainStream, const QString &subStream) :
-        m_id(id), m_name(name), m_mainStream(mainStream), m_subStream(subStream) {}
+    DeviceObject(const QString &id, const QString &name, const QString &mainStream, const QString &subStream, const QString &frame) :
+        m_id(id), m_name(name), m_mainStream(mainStream), m_subStream(subStream), m_frame(frame) {}
 
     inline QString id(void) { return m_id; }
     inline QString name(void) { return m_name; }
     inline QString mainStream(void) { return m_mainStream; }
     inline QString subStream(void) { return m_subStream; }
+    inline QString frame(void) { return m_frame; }
 
 private:
 
-    QString m_id, m_name, m_mainStream, m_subStream;
+    QString m_id, m_name, m_mainStream, m_subStream, m_frame;
 
 };
 

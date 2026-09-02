@@ -55,11 +55,11 @@ Device DeviceList::byName(const QString &name, int *index)
 
 Device DeviceList::parse(const QJsonObject &json)
 {
-    QString id = mqttSafe(json.value("id").toString()), name = mqttSafe(json.value("name").toString()), mainStream = json.value("mainStream").toString().trimmed(), subStream = json.value("subStream").toString().trimmed();
+    QString id = mqttSafe(json.value("id").toString()), name = mqttSafe(json.value("name").toString()), mainStream = json.value("mainStream").toString().trimmed();
     Device device;
 
     if (!name.isEmpty() && !mainStream.isEmpty())
-        device = Device(new DeviceObject(id.isEmpty() ? randomData(5).toHex() : id, name, mainStream, subStream));
+        device = Device(new DeviceObject(id.isEmpty() ? randomData(5).toHex() : id, name, mainStream, json.value("subStream").toString().trimmed(), json.value("frame").toString().trimmed()));
 
     return device;
 }
@@ -109,6 +109,9 @@ QJsonArray DeviceList::serialize(void)
 
         if (!device->subStream().isEmpty())
             json.insert("subStream", device->subStream());
+
+        if (!device->frame().isEmpty())
+            json.insert("frame", device->frame());
 
         array.append(json);
     }

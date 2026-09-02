@@ -42,12 +42,11 @@ void Controller::sendRequest(const QString &method, const QString &path, const Q
         list.append("-d @-");
     }
 
-    list.append(QString("'%1/api/%2'").arg(m_url, path));
+    list.append(QString("'%1'").arg(QString(path.contains("://") ? path : QString("%1/api/%2").arg(m_url, path)).replace("'", "'\\''")));
     command = list.join(0x20);
 
     connect(process, static_cast <void (QProcess::*)(int, QProcess::ExitStatus)> (&QProcess::finished), this, &Controller::finished);
     process->setProperty("method", method);
-    process->setProperty("path", path);
     process->setProperty("id", id);
 
     logDebug(m_debug) << "API request:" << command.toUtf8().constData();
@@ -229,7 +228,7 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
             Device device = m_devices->byName(json.value("device").toString());
 
             if (!device.isNull())
-                sendRequest("GET", QString("frame.jpeg?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))), json.value("id").toString());
+                sendRequest("GET", device->frame().isEmpty() ? QString("frame.jpeg?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))) : device->frame(), json.value("id").toString());
 
             break;
         }
@@ -256,8 +255,8 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
     QProcess *process = reinterpret_cast <QProcess*> (sender());
     QByteArray response = process->readAllStandardOutput();
     QJsonObject json = QJsonDocument::fromJson(response).object();
-    QString id = process->property("id").toString();
-    bool frame = process->property("path").toString().startsWith("frame.jpeg");
+    QString method = process->property("method").toString(), id = process->property("id").toString();
+    bool frame = method == "GET" && !id.isEmpty();
 
     logDebug(m_debug) << "API response:" << (frame ? QString("frame data (%1 bytes)").arg(response.length()).toUtf8() : response).constData();
     process->deleteLater();
@@ -277,7 +276,7 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
         return;
     }
 
-    if (process->property("method").toString() != "GET")
+    if (method != "GET")
         return;
 
     if (exitCode)
