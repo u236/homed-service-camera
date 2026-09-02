@@ -109,7 +109,7 @@ void Controller::syncStreams(const QJsonObject &json)
 
     for (auto it = map.begin(); it != map.end(); it++)
     {
-        if (json.value(it.key()).toObject().value("producers").toArray().first().toObject().value("url").toString() == it.value())
+        if (it.value().isEmpty() && !json.contains(it.key()))
             continue;
 
         updateStream(it.key(), it.value());
