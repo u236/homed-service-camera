@@ -59,7 +59,7 @@ Device DeviceList::parse(const QJsonObject &json)
     Device device;
 
     if (!name.isEmpty() && !mainStream.isEmpty())
-        device = Device(new DeviceObject(id.isEmpty() ? randomData(5).toHex() : id, name, mainStream, json.value("subStream").toString().trimmed(), json.value("frame").toString().trimmed()));
+        device = Device(new DeviceObject(id.isEmpty() ? randomData(5).toHex() : id, name, mainStream, json.value("subStream").toString().trimmed(), json.value("frame").toString().trimmed(), json.value("preload").toBool()));
 
     return device;
 }
@@ -112,6 +112,9 @@ QJsonArray DeviceList::serialize(void)
 
         if (!device->frame().isEmpty())
             json.insert("frame", device->frame());
+
+        if (device->preload())
+            json.insert("preload", true);
 
         array.append(json);
     }

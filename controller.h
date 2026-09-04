@@ -1,7 +1,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#define SERVICE_VERSION             "1.0.2"
+#define SERVICE_VERSION             "1.0.3"
 #define REQUEST_TIMEOUT             10
 #define RETRY_INTERVAL              10000
 
@@ -51,10 +51,13 @@ private:
 
     QString streamName(const Device &device, bool mainStream);
 
-    void sendRequest(const QString &method, const QString &path, const QString &id = QString(), const QByteArray &data = QByteArray());
     void updateStream(const QString &name, const QString &stream);
-    void syncStreams(const QJsonObject &json);
+    void updatePreload(const QString &name, bool enabled);
 
+    void syncStreams(const QJsonObject &json);
+    void syncPreload(const QJsonObject &json);
+
+    void sendRequest(const QString &method, const QString &path, const QString &id = QString(), const QByteArray &data = QByteArray());
     void publishEvent(const QString &name, Event event);
 
 public slots:

@@ -27,38 +27,6 @@ QString Controller::streamName(const Device &device, bool mainStream)
     return list.join('_');
 }
 
-void Controller::sendRequest(const QString &method, const QString &path, const QString &id, const QByteArray &data)
-{
-    QList <QString> list = {"curl", "-fsS"};
-    QProcess *process(new QProcess(this));
-    QString command;
-
-    list.append(QString("-m %1").arg(REQUEST_TIMEOUT));
-    list.append(QString("-X %1").arg(method));
-
-    if (!data.isEmpty())
-    {
-        list.append("-H 'Content-Type: application/json'");
-        list.append("-d @-");
-    }
-
-    list.append(QString("'%1'").arg(QString(path.contains("://") ? path : QString("%1/api/%2").arg(m_url, path)).replace("'", "'\\''")));
-    command = list.join(0x20);
-
-    connect(process, static_cast <void (QProcess::*)(int, QProcess::ExitStatus)> (&QProcess::finished), this, &Controller::finished);
-    process->setProperty("method", method);
-    process->setProperty("id", id);
-
-    logDebug(m_debug) << "API request:" << command.toUtf8().constData();
-    process->start("sh", {"-c", command});
-
-    if (data.isEmpty())
-        return;
-
-    process->write(data);
-    process->closeWriteChannel();
-}
-
 void Controller::updateStream(const QString &name, const QString &stream)
 {
     if (!stream.isEmpty())
@@ -71,6 +39,12 @@ void Controller::updateStream(const QString &name, const QString &stream)
         logInfo << "Stream" << name << "removed";
         sendRequest("DELETE", QString("streams?src=%1").arg(name));
     }
+}
+
+void Controller::updatePreload(const QString &name, bool enabled)
+{
+    logInfo << "Stream" << name << "preload" << (enabled ? "enabled" : "disabled");
+    sendRequest(enabled ? "PUT" : "DELETE", QString("preload?src=%1").arg(name));
 }
 
 void Controller::syncStreams(const QJsonObject &json)
@@ -121,6 +95,66 @@ void Controller::syncStreams(const QJsonObject &json)
 
         updateStream(it.key(), QString());
     }
+
+    sendRequest("GET", "preload");
+}
+
+void Controller::syncPreload(const QJsonObject &json)
+{
+    QRegExp expression(QString("^%1_[0-9a-f]{10}$").arg(QRegExp::escape(m_prefix)));
+    QList <QString> list;
+
+    for (int i = 0; i < m_devices->count(); i++)
+    {
+        const Device &device = m_devices->at(i);
+
+        if (!device->mainStream().contains("://") || !device->preload())
+            continue;
+
+        list.append(streamName(device, true));
+        updatePreload(list.last(), true);
+    }
+
+    for (auto it = json.begin(); it != json.end(); it++)
+    {
+        if (!expression.exactMatch(it.key()) || list.contains(it.key()))
+            continue;
+
+        updatePreload(it.key(), false);
+    }
+}
+
+void Controller::sendRequest(const QString &method, const QString &path, const QString &id, const QByteArray &data)
+{
+    QList <QString> list = {"curl", "-fsS"};
+    QProcess *process(new QProcess(this));
+    QString command;
+
+    list.append(QString("-m %1").arg(REQUEST_TIMEOUT));
+    list.append(QString("-X %1").arg(method));
+
+    if (!data.isEmpty())
+    {
+        list.append("-H 'Content-Type: application/json'");
+        list.append("-d @-");
+    }
+
+    list.append(QString("'%1'").arg(QString(path.contains("://") ? path : QString("%1/api/%2").arg(m_url, path)).replace("'", "'\\''")));
+    command = list.join(0x20);
+
+    connect(process, static_cast <void (QProcess::*)(int, QProcess::ExitStatus)> (&QProcess::finished), this, &Controller::finished);
+    process->setProperty("method", method);
+    process->setProperty("path", path);
+    process->setProperty("id", id);
+
+    logDebug(m_debug) << "API request:" << command.toUtf8().constData();
+    process->start("sh", {"-c", command});
+
+    if (data.isEmpty())
+        return;
+
+    process->write(data);
+    process->closeWriteChannel();
 }
 
 void Controller::publishEvent(const QString &name, Event event)
@@ -282,6 +316,12 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
     if (exitCode)
     {
         m_timer->start(RETRY_INTERVAL);
+        return;
+    }
+
+    if (process->property("path").toString() == "preload")
+    {
+        syncPreload(json);
         return;
     }
 
