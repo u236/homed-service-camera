@@ -1,9 +1,10 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#define SERVICE_VERSION             "1.0.3"
-#define REQUEST_TIMEOUT             10
-#define RETRY_INTERVAL              10000
+#define SERVICE_VERSION     "1.0.4"
+#define REQUEST_TIMEOUT     10
+#define RETRY_INTERVAL      10000
+#define CURL_HTTP_ERROR     22
 
 #include <QMetaEnum>
 #include <QProcess>

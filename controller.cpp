@@ -290,12 +290,12 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
     QByteArray response = process->readAllStandardOutput();
     QJsonObject json = QJsonDocument::fromJson(response).object();
     QString method = process->property("method").toString(), id = process->property("id").toString();
-    bool frame = method == "GET" && !id.isEmpty();
+    bool frame = method == "GET" && !id.isEmpty(), emptyList = method == "GET" && id.isEmpty() && exitCode == CURL_HTTP_ERROR;
 
-    logDebug(m_debug) << "API response:" << (frame ? QString("frame data (%1 bytes)").arg(response.length()).toUtf8() : response).constData();
+    logDebug(m_debug) << "API response:" << (frame ? QString("frame data (%1 bytes)").arg(response.length()).toUtf8() : response.isEmpty() ? QByteArray("(empty)") : response).constData();
     process->deleteLater();
 
-    if (exitCode)
+    if (exitCode && !emptyList)
         logWarning << "API request failed, curl exit code:" << exitCode;
 
     if (frame)
@@ -313,7 +313,7 @@ void Controller::finished(int exitCode, QProcess::ExitStatus)
     if (method != "GET")
         return;
 
-    if (exitCode)
+    if (exitCode && !emptyList)
     {
         m_timer->start(RETRY_INTERVAL);
         return;
