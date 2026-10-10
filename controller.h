@@ -48,7 +48,7 @@ private:
 
     QMetaEnum m_commands, m_events;
     QString m_url, m_prefix;
-    bool m_debug;
+    bool m_debug, m_ffmpeg;
 
     QString streamName(const Device &device, bool mainStream);
 
@@ -58,7 +58,7 @@ private:
     void syncStreams(const QJsonObject &json);
     void syncPreload(const QJsonObject &json);
 
-    void sendRequest(const QString &method, const QString &path, const QString &id = QString(), const QByteArray &data = QByteArray());
+    void sendRequest(const QString &method, const QString &path, const QString &id = QString(), const QByteArray &data = QByteArray(), quint16 resize = 0);
     void publishEvent(const QString &name, Event event);
 
 public slots:

@@ -3,9 +3,15 @@
 
 Controller::Controller(const QString &configFile) : HOMEd(SERVICE_VERSION, configFile), m_timer(new QTimer(this)), m_devices(new DeviceList(getConfig(), this)), m_commands(QMetaEnum::fromType <Command> ()), m_events(QMetaEnum::fromType <Event> ())
 {
+    QProcess process;
+
+    process.start("sh", {"-c", "command -v ffmpeg"});
+    process.waitForFinished();
+
     m_url = getConfig()->value("rtc/url", "http://localhost:1984").toString();
     m_prefix = getConfig()->value("rtc/prefix", "homed").toString();
     m_debug = getConfig()->value("rtc/debug", false).toBool();
+    m_ffmpeg = !process.exitCode();
 
     connect(m_timer, &QTimer::timeout, this, &Controller::requestStreams);
 
@@ -124,7 +130,7 @@ void Controller::syncPreload(const QJsonObject &json)
     }
 }
 
-void Controller::sendRequest(const QString &method, const QString &path, const QString &id, const QByteArray &data)
+void Controller::sendRequest(const QString &method, const QString &path, const QString &id, const QByteArray &data, quint16 resize)
 {
     QList <QString> list = {"curl", "-fsS"};
     QProcess *process(new QProcess(this));
@@ -140,6 +146,10 @@ void Controller::sendRequest(const QString &method, const QString &path, const Q
     }
 
     list.append(QString("'%1'").arg(QString(path.contains("://") ? path : QString("%1/api/%2").arg(m_url, path)).replace("'", "'\\''")));
+
+    if (resize)
+        list.append(QString("| ffmpeg -v error -i - -vf 'scale=-2:min(%1\\,ih):flags=fast_bilinear' -q 5 -f mjpeg -").arg(resize));
+
     command = list.join(0x20);
 
     connect(process, static_cast <void (QProcess::*)(int, QProcess::ExitStatus)> (&QProcess::finished), this, &Controller::finished);
@@ -262,7 +272,11 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
             Device device = m_devices->byName(json.value("device").toString());
 
             if (!device.isNull())
-                sendRequest("GET", device->frame().isEmpty() ? QString("frame.jpeg?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))) : device->frame(), json.value("id").toString());
+            {
+                QList <QString> list = device->frame().split('|');
+                QString url = list.value(0).trimmed();
+                sendRequest("GET", url.isEmpty() ? QString("frame.jpeg?src=%1").arg(QString(QUrl::toPercentEncoding(streamName(device, !json.value("subStream").toBool() || device->subStream().isEmpty())))) : url, json.value("id").toString(), QByteArray(), m_ffmpeg && !url.isEmpty() ? static_cast <quint16> (list.value(1).trimmed().toInt()) : 0);
+            }
 
             break;
         }
