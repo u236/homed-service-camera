@@ -267,6 +267,39 @@ void Controller::mqttReceived(const QByteArray &message, const QMqttTopicName &t
             break;
         }
 
+        case Command::updateOrder:
+        {
+            QJsonArray order = json.value("order").toArray();
+            int position = 0;
+            bool check = false;
+
+            for (auto it = order.begin(); it != order.end(); it++)
+            {
+                int index = -1;
+
+                m_devices->byName(it->toString(), &index);
+
+                if (index < position)
+                    continue;
+
+                if (index != position)
+                {
+                    m_devices->move(index, position);
+                    check = true;
+                }
+
+                position++;
+            }
+
+            if (check)
+            {
+                logInfo << "Devices order updated";
+                m_devices->store(true);
+            }
+
+            break;
+        }
+
         case Command::getFrame:
         {
             Device device = m_devices->byName(json.value("device").toString());

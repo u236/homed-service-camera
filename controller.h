@@ -22,6 +22,7 @@ public:
         restartService,
         updateDevice,
         removeDevice,
+        updateOrder,
         getFrame,
         getStream
     };

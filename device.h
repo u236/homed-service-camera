@@ -16,20 +16,22 @@ class DeviceObject
 
 public:
 
-    DeviceObject(const QString &id, const QString &name, const QString &mainStream, const QString &subStream, const QString &frame, bool preload) :
-        m_id(id), m_name(name), m_mainStream(mainStream), m_subStream(subStream), m_frame(frame), m_preload(preload) {}
+    DeviceObject(const QString &id, const QString &name, const QString &mainStream, const QString &subStream, const QString &frame, bool preload, bool hide) :
+        m_id(id), m_name(name), m_mainStream(mainStream), m_subStream(subStream), m_frame(frame), m_preload(preload), m_hide(hide) {}
 
     inline QString id(void) { return m_id; }
     inline QString name(void) { return m_name; }
     inline QString mainStream(void) { return m_mainStream; }
     inline QString subStream(void) { return m_subStream; }
     inline QString frame(void) { return m_frame; }
+
     inline bool preload(void) { return m_preload; }
+    inline bool hide(void) { return m_hide; }
 
 private:
 
     QString m_id, m_name, m_mainStream, m_subStream, m_frame;
-    bool m_preload;
+    bool m_preload, m_hide;
 
 };
 
